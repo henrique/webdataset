@@ -317,6 +317,34 @@ class Shorthands:
             result = result.with_length(numbatches)
         return result
 
+    def prefetch(self, **kw):
+        """Initiate the iterator to prefetch the data from the stream.
+
+        Use with `loader = loader.prefetch()`
+
+        The user may use 'DataLoader.prefetch_factor' to control the amount of data prefetched.
+        """
+        return Prefetcher(self)
+
+class Prefetcher(IterableDataset, Composable, Shorthands):
+    """Iterator wrapper for 'WebLoader.prefetch()'."""
+
+    def __init__(self, source):
+        """ Create dataloader iterator """
+        super().__init__()
+        self.source_(source)
+        self.iter_obj = iter(source)
+
+    def __iter__(self): return self
+
+    def __next__(self):
+        """ Return sample and recreate iterator when needed """
+        try:
+            return next(self.iter_obj)
+        except StopIteration as stop:
+            self.iter_obj = iter(self.source)
+            raise stop
+
 
 class Processor(IterableDataset, Composable, Shorthands):
     """A class that turns a function into an IterableDataset."""
